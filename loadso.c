@@ -128,14 +128,18 @@ loadso_err loadso_inject(int pid, char *path)
     if(bits == 0)
         return loadso_err_file; // loadso_err_arch
 
-    // now that we have the bits we can call the right functions
+    // now that we have the bits we can get the right function offset
+    // TODO: Needs error checking
     long module_base = __module_base(pid, module_name);
+    long target_offset = 0;
 
     if(bits == 32) {
-        printf("[+] 32bits\n");
-    } else {
-        printf("[+] 64bits\n"); 
+        target_offset = elf32_getsymbol(module_data, TARGET_SYMBOL);    
+    } else {        
+        target_offset = elf64_getsymbol(module_data, TARGET_SYMBOL);
     }
+
+    printf("[+] Target function at offset 0x%lx\n", target_offset + module_base);
 
     tracer_detach(pid);
     
