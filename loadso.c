@@ -4,9 +4,24 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ptrace.h>
+#include <sys/mman.h>
 
 #include "loadso.h"
 #include "tracer.h"
+#include "elfutils.h"
+
+static void *__map_file(char *path)
+{
+    int fd = open(path , O_RDONLY);
+    struct stat statbuf;
+
+    if(fd < 0)
+        return NULL;
+
+    fstat(fd, &statbuf);
+
+    return mmap(0, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+}
 
 static long __module_base(int pid, char *name)
 {
@@ -26,6 +41,7 @@ static long __module_base(int pid, char *name)
     char *line;
 
     while((line = fgets(buff, 512, fp)) != NULL) {
+        printf(">> %s", line);
         if(strstr(line, name) > 0) {
             return strtoul(line, NULL, 16);
         }
@@ -49,15 +65,7 @@ loadso_err loadso_inject(int pid, char *path)
     printf("[+] Injecting object \"%s\" in target process %d\n", path, pid);
     
     // We compute relative offsets for the functions
-    long libc_local_base = __module_base(0, TARGET_LIB);
-    long libc_remote_base = __module_base(pid, TARGET_LIB);
-
-    long dlopen_offset = (long)dlopen - libc_local_base;
-    long remote_dlopen = libc_remote_base + dlopen_offset;
-
-    printf("[+] Local libc: 0x%lx, Remote libc: 0x%lx\n", libc_local_base, libc_remote_base);
-    printf("[+] Remote dlopen: 0x%lx\n", remote_dlopen);
-
+    elf64_getsection(__map_file("/system/bin/linker64"), ".strtab");
     return loadso_err_ok; 
 }
 
