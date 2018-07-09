@@ -1,5 +1,5 @@
 # Customize flags as you wish
-CFLAGS= -std=gnu99 -g -Wall
+CFLAGS= -std=gnu99 -g -fPIC -Wall
 
 # Code shared between library and executable
 SHARED_SRC=loadso.c tracer.c elfutils.c

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <sys/ptrace.h>
 #include "tracer.h"
 
